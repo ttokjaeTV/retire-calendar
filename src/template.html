@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>노후 월급 달력 · 똑재TV</title>
+<meta name="description" content="국민연금, 연금저축·IRP 인출, 월배당·분기배당 ETF 분배금을 합쳐 은퇴 후 매달 통장에 들어오는 돈을 1~12월 달력으로 보여 주는 무료 계산기. 연금소득세·배당소득세를 떼고, 돈이 적게 들어오는 달과 그 달을 채우는 배당 시기까지 알려 드립니다. 2026년 세법 기준.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/*__BASE_CSS__*/
+  .src-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .src-dot { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .div-row { display: grid; grid-template-columns: 1.3fr 1fr 0.8fr 1.3fr 1.2fr; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .div-head { font-size: 12px; font-weight: 800; color: var(--ink-mute); }
+  .div-row select, .sel { width: 100%; height: 46px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--white); font: inherit; font-size: 14px; font-weight: 700; padding: 0 10px; color: var(--ink); }
+  .div-row input.name { width: 100%; height: 46px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--white); font: inherit; font-size: 14px; font-weight: 700; padding: 0 12px; color: var(--ink); }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .check input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); }
+  .check small { display: block; font-size: 12.5px; color: var(--ink-mute); font-weight: 600; }
+  .cal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+  .cal-m { background: var(--white); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+  .cal-m.low { border-color: #2E5E8A; background: #F1F5F9; }
+  .cal-m.high { border-color: var(--accent); }
+  .cal-m .mn { font-size: 13px; font-weight: 900; color: var(--ink-mute); display: flex; justify-content: space-between; }
+  .cal-m .mn em { font-style: normal; font-size: 11.5px; font-weight: 800; color: #2E5E8A; }
+  .cal-m.high .mn em { color: var(--accent); }
+  .cal-m .mt { font-size: 19px; font-weight: 900; margin: 4px 0 6px; letter-spacing: -0.4px; }
+  .cal-m .bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--bg); margin-bottom: 6px; }
+  .cal-m .bar span { display: block; height: 100%; }
+  .cal-m .mb { font-size: 12px; font-weight: 600; color: var(--ink-soft); line-height: 1.55; }
+  .cal-m .short { font-size: 12px; font-weight: 800; color: #2E5E8A; margin-top: 4px; }
+  @media (max-width: 768px) {
+    .div-row { grid-template-columns: 1fr 1fr; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px dashed var(--border); }
+    .div-row .name-cell { grid-column: 1 / -1; }
+    .div-head { display: none; }
+    .cal { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <a href="https://ttokjaetv.github.io/" class="hub-back">← 똑재TV 계산기 모음</a>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">똑</div>
+      <div>
+        <div class="logo-name">똑재TV</div>
+        <div class="logo-sub">RETIREMENT PAYCHECK CALENDAR</div>
+      </div>
+    </div>
+    <span class="base-date">2026-10-24 세법 기준</span>
+  </header>
+
+  <div class="hero">
+    <span class="tag"><span class="dot"></span>노후 월급 달력</span>
+    <h1 class="hero-title">은퇴하면 매달 통장에<br><span class="underline-mark">얼마씩</span> 들어올까?</h1>
+    <p class="hero-desc">
+      국민연금, 연금저축·IRP 인출, 월배당·분기배당 ETF 분배금을 합쳐 <b>1월부터 12월까지 달마다 들어오는 돈</b>을 보여 드려요.<br class="pc-br">
+      세금을 떼고, 돈이 적게 들어오는 달과 <b>그 달을 채우려면 언제 배당을 받으면 좋은지</b>도 알려 드립니다.
+    </p>
+  </div>
+
+  <div class="top-cta">
+    <div class="top-cta-text">💡 <strong>월배당으로 노후 월급 만들기</strong>가 더 궁금하신가요? 똑재TV에서 매주 풀어드립니다.</div>
+    <div class="top-cta-links">
+      <a href="https://www.youtube.com/@ttok_jae" target="_blank" rel="noopener" class="top-cta-link primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        똑재TV 구독하기
+      </a>
+      <a href="https://cafe.naver.com/ttokjae" target="_blank" rel="noopener" class="top-cta-link"><span class="naver-mark">N</span>평생 ETF 투자 카페</a>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="tool-btn" id="share-btn">설정 링크 복사</button>
+    <button type="button" class="tool-btn" id="reset-btn">처음 값으로</button>
+    <a href="#result" class="tool-btn ghost">결과 보기 ↓</a>
+  </div>
+
+  <!-- STEP 01 -->
+  <div class="card">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">STEP 01</span></div>
+    <div class="step-title">나이와 한 달 생활비</div>
+    <div class="grid-2">
+      <div><label class="label" for="age">연금 받을 때 나이 (만)</label><div class="input-wrap"><input type="text" inputmode="numeric" id="age" value="65"><span class="input-unit">세</span></div><div class="input-hint" id="age-hint"></div></div>
+      <div><label class="label" for="target">한 달에 필요한 생활비</label><div class="input-wrap"><input type="text" inputmode="numeric" id="target" data-man value="350"><span class="input-unit">만원</span></div><div class="input-hint">비워 두면 비교하지 않아요</div></div>
+    </div>
+  </div>
+
+  <!-- STEP 02 -->
+  <div class="card">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">STEP 02</span></div>
+    <div class="step-title"><span class="src-dot" style="background:#4A5A4A;display:inline-block;margin-right:6px"></span>국민연금</div>
+    <div class="step-desc">매달 25일에 들어와요. 국민연금공단 '내 연금 알아보기'의 <b>예상 월 수령액</b>을 넣거나, <a href="https://ttokjaetv.github.io/nps-calc/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800">국민연금 계산기 →</a>로 구해 보세요.</div>
+    <div class="grid-2">
+      <div><label class="label" for="nps">국민연금 월 수령액 (실수령)</label><div class="input-wrap"><input type="text" inputmode="numeric" id="nps" data-man value="120"><span class="input-unit">만원</span></div></div>
+    </div>
+  </div>
+
+  <!-- STEP 03 -->
+  <div class="card">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">STEP 03</span></div>
+    <div class="step-title"><span class="src-dot" style="background:#C4A57B;display:inline-block;margin-right:6px"></span>연금저축·IRP 인출</div>
+    <div class="step-desc">연금계좌에서 꺼내는 돈은 받는 날 나이에 따라 연금소득세(<span data-rule="PENSION.rateByAge[0][1]*100">5.5</span>%·<span data-rule="PENSION.rateByAge[1][1]*100">4.4</span>%·<span data-rule="PENSION.rateByAge[2][1]*100">3.3</span>%)를 떼요. 1년 합계가 <span data-rule="PENSION.separateLimit/1e4">1,500</span>만원을 넘으면 세금이 달라지니 <a href="https://ttokjaetv.github.io/pension-tax-sim/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800">연금 인출 세금 시뮬레이터 →</a>에서 확인하세요.</div>
+    <div class="grid-2">
+      <div><label class="label" for="pen-amt">한 번에 꺼내는 금액 (세전)</label><div class="input-wrap"><input type="text" inputmode="numeric" id="pen-amt" data-man value="100"><span class="input-unit">만원</span></div><div class="input-hint" id="pen-hint"></div></div>
+      <div><label class="label" for="pen-freq">꺼내는 주기</label><select class="sel" id="pen-freq"><option value="m">매달</option><option value="q36">분기 3·6·9·12월</option><option value="q14">분기 1·4·7·10월</option><option value="q25">분기 2·5·8·11월</option><option value="h">반기 6·12월</option><option value="y4">연 1회 4월</option></select></div>
+    </div>
+    <label class="check"><input type="checkbox" id="pen-free"><span>세액공제 받지 않은 원금에서만 꺼내요<small>이 돈은 꺼낼 때 세금이 없어요(연금계좌는 이 돈부터 먼저 나가요)</small></span></label>
+  </div>
+
+  <!-- STEP 04 -->
+  <div class="card">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">STEP 04</span></div>
+    <div class="step-title"><span class="src-dot" style="background:#D9542B;display:inline-block;margin-right:6px"></span>배당 (일반계좌)</div>
+    <div class="step-desc">일반 증권계좌에서 받는 분배금만 넣어요. ISA·연금계좌 안의 배당은 계좌 안에 쌓이니, 꺼내 쓰는 금액은 STEP 03에 넣으세요. 배당률은 <b>세전</b>, 국내상장은 <span data-rule="FIN_INCOME.withholdingWithLocal*100">15.4</span>%, 미국 직투는 <span data-rule="FIN_INCOME.usWithholding*100">15</span>%를 떼요.</div>
+    <div class="div-row div-head"><span>종목 (메모)</span><span>투자금</span><span>배당률</span><span>받는 달</span><span>계좌</span></div>
+    <div id="div-rows"></div>
+    <p class="note" style="margin:6px 0 0">예) 국내상장 미국배당다우존스 ETF는 대부분 <b>매달</b>, 미국 SCHD는 <b>3·6·9·12월</b>, 국내 배당주는 결산배당 <b>4월</b>이 많아요. 실제 지급 달은 운용사·증권사 공지를 확인하세요. 종목은 예시일 뿐 추천이 아닙니다.</p>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card" id="result">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">RESULT</span></div>
+    <div class="step-title">노후 월급 달력</div>
+    <div class="verdict" id="verdict"></div>
+    <div class="grid-4">
+      <div class="stat-card accent"><div class="stat-label">평균 한 달 월급</div><div class="stat-value" id="s-avg">-</div><div class="stat-sub" id="s-avg-sub"></div></div>
+      <div class="stat-card"><div class="stat-label">가장 적은 달</div><div class="stat-value" id="s-min">-</div><div class="stat-sub" id="s-min-sub"></div></div>
+      <div class="stat-card"><div class="stat-label">가장 많은 달</div><div class="stat-value" id="s-max">-</div><div class="stat-sub" id="s-max-sub"></div></div>
+      <div class="stat-card"><div class="stat-label">1년 동안 낸 세금</div><div class="stat-value" id="s-tax">-</div><div class="stat-sub" id="s-tax-sub"></div></div>
+    </div>
+    <div class="alerts" id="alerts"></div>
+    <div class="cal" id="cal"></div>
+  </div>
+
+  <div class="card">
+    <div class="chart-head">
+      <div><div class="chart-title">달마다 들어오는 돈</div><div class="chart-subtitle">세금 뗀 금액 · 국민연금 + 연금계좌 + 배당</div></div>
+    </div>
+    <div class="chart-container" style="height:300px"><canvas id="cal-chart"></canvas></div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4D5C4" stroke-width="2.5" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+      <span class="insight-label-text">KEY INSIGHT</span>
+    </div>
+    <h3 class="insight-title" id="ins-title">-</h3>
+    <div class="insight-desc" id="ins-desc"></div>
+    <div class="insight-tools">
+      <button type="button" class="cta-link secondary" id="copy-btn">결과 글로 복사</button>
+      <a class="cta-link secondary" href="https://ttokjaetv.github.io/montly-div/" target="_blank" rel="noopener">월배당 ETF 분배금 기록 보기 →</a>
+      <a class="cta-link secondary" href="https://ttokjaetv.github.io/retire-drawdown/" target="_blank" rel="noopener">이렇게 쓰면 몇 살까지 버틸까? →</a>
+    </div>
+    <div class="insight-cta">
+      <div class="insight-cta-text">📊 월배당으로 노후 월급 만드는 법이 더 궁금하다면?</div>
+      <a href="https://www.youtube.com/@ttok_jae" target="_blank" rel="noopener" class="cta-link primary">똑재TV 구독하기</a>
+      <a href="https://cafe.naver.com/ttokjae" target="_blank" rel="noopener" class="cta-link secondary"><span class="naver-mark">N</span>평생 ETF 투자 카페 가입</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step-label"><div class="step-line"></div><span class="step-text">HOW IT WORKS</span></div>
+    <div class="step-title">계산 방법과 가정</div>
+    <div class="method-grid" style="margin-top:14px">
+      <div class="method-box">
+        <div class="method-t">이렇게 계산해요</div>
+        <ul class="method-list">
+          <li><b>국민연금</b>: 넣은 월 수령액이 매달 그대로 들어온다고 봐요(실수령 기준).</li>
+          <li><b>연금계좌</b>: 꺼내는 금액에서 받는 날 만 나이로 연금소득세(70세 미만 <span data-rule="PENSION.rateByAge[0][1]*100">5.5</span>%, 80세 미만 <span data-rule="PENSION.rateByAge[1][1]*100">4.4</span>%, 그 이상 <span data-rule="PENSION.rateByAge[2][1]*100">3.3</span>% — 소득세법 제129조①5호의2)를 떼요. 세액공제 받지 않은 원금만 꺼낸다고 고르면 세금 0원.</li>
+          <li><b>배당</b>: 투자금 × 배당률(세전)을 받는 달 수로 나눠 그 달에 넣고, 국내상장 <span data-rule="FIN_INCOME.withholdingWithLocal*100">15.4</span>%·미국 직투 <span data-rule="FIN_INCOME.usWithholding*100">15</span>%를 떼요(원 미만 버림).</li>
+          <li><b>빈 달 채우기</b>: 분기 배당 세 가지(1·4·7·10 / 2·5·8·11 / 3·6·9·12월) 가운데 지금 들어오는 돈의 합이 가장 적은 쪽을 알려 드려요.</li>
+        </ul>
+      </div>
+      <div class="method-box">
+        <div class="method-t">계산에 넣지 않은 것</div>
+        <ul class="method-list">
+          <li>국민연금에서 떼는 소득세·건보료, 물가에 따라 오르는 국민연금 금액.</li>
+          <li>연금계좌 1년 합계가 <span data-rule="PENSION.separateLimit/1e4">1,500</span>만원을 넘을 때의 종합과세·분리과세(<span data-rule="PENSION.separateRate*100">16.5</span>%) 선택, 퇴직금(이연퇴직소득)에서 꺼낼 때의 세금.</li>
+          <li>금융소득이 연 <span data-rule="FIN_INCOME.threshold/1e4">2,000</span>만원을 넘을 때 늘어나는 세금, 연 <span data-rule="NHIS.finIncomeThreshold/1e4">1,000</span>만원을 넘을 때 붙는 건보료(경고만 해요).</li>
+          <li>배당금 변동·환율, 매매로 생기는 돈. 실제 지급일은 달 말·다음 달 초로 밀릴 수 있어요.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    ※ 이 계산기는 입력한 금액과 배당률이 1년 동안 그대로라고 가정한 시뮬레이션입니다. 연금소득세·배당 원천징수만 반영했고 건보료·종합과세는 반영하지 않았습니다. 특정 상품의 매수·매도 권유가 아닙니다.<br>
+    2026-10-24 세법 기준
+  </footer>
+</div>
+
+<!-- 공용 제도 상수 -->
+<script src="https://ttokjaetv.github.io/rules/v2026.3/rules.js"></script>
+<script src="https://ttokjaetv.github.io/rules/fill-v1.js"></script>
+<script>
+if (!window.TTOKJAE_RULES || !TTOKJAE_RULES.PENSION || !TTOKJAE_RULES.FIN_INCOME) {
+  var TJR_MSG = '기준값 파일(rules.js)을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.';
+  var tjrShow = function () { document.body.insertAdjacentHTML('afterbegin', '<div role="alert" style="background:#fdecea;color:#b3261e;padding:12px 16px;text-align:center;font-weight:600">' + TJR_MSG + '</div>'); };
+  document.body ? tjrShow() : document.addEventListener('DOMContentLoaded', tjrShow);
+  throw new Error(TJR_MSG);
+}
+const TR = TTOKJAE_RULES;
+/*__ENGINE__*/
+
+const $ = id => document.getElementById(id);
+const STORE_KEY = 'tj-retire-calendar-v1';
+const NDIV = 4;
+const DIV_DEF = [['월배당 ETF(국내상장)', '10,000', '4', 'm', 'kr'], ['SCHD(미국 직투)', '10,000', '3.5', 'q36', 'us'], ['', '', '', 'q14', 'kr'], ['', '', '', 'y4', 'kr']];   // rules-ok: 예시 입력값(만원·%)
+const PAT_OPTS = Object.entries(RC_PATTERNS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+$('div-rows').innerHTML = DIV_DEF.map((d, i) => `<div class="div-row">
+  <div class="name-cell"><input type="text" class="name" id="dn${i}" maxlength="30" placeholder="종목 메모" value="${d[0]}"></div>
+  <div class="input-wrap"><input type="text" inputmode="numeric" id="dv${i}" data-man value="${d[1]}" placeholder="투자금"><span class="input-unit">만원</span></div>
+  <div class="input-wrap"><input type="text" inputmode="decimal" id="dy${i}" value="${d[2]}" placeholder="배당률"><span class="input-unit">%</span></div>
+  <select id="dp${i}">${PAT_OPTS}</select>
+  <select id="da${i}"><option value="kr">국내상장</option><option value="us">미국 직투</option></select>
+</div>`).join('');
+DIV_DEF.forEach((d, i) => { $('dp' + i).value = d[3]; $('da' + i).value = d[4]; });
+
+const FIELDS = ['age', 'target', 'nps', 'pen-amt', 'pen-freq'];
+for (let i = 0; i < NDIV; i++) FIELDS.push('dn' + i, 'dv' + i, 'dy' + i, 'dp' + i, 'da' + i);
+const DEFAULTS = {}; FIELDS.forEach(id => { DEFAULTS[id] = $(id).value; });
+
+function num(id) {
+  const el = $(id); if (!el) return 0;
+  const v = parseFloat(String(el.value).replace(/[^0-9.\-]/g, ''));
+  if (isNaN(v)) return 0;
+  return el.hasAttribute('data-man') ? v * 10000 : v;
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fmtMan(n) {
+  const neg = n < 0; n = Math.abs(Math.round(n / 10000));
+  if (n === 0) return '0원';
+  const eok = Math.floor(n / 10000), man = n % 10000;
+  const s = eok ? `${eok.toLocaleString()}억${man ? ' ' + man.toLocaleString() + '만원' : '원'}` : `${man.toLocaleString()}만원`;
+  return (neg ? '−' : '') + s;
+}
+function fmtWon(n) {
+  n = Math.round(Math.abs(n));
+  if (n === 0) return '0원';
+  const eok = Math.floor(n / 1e8), man = Math.floor(n % 1e8 / 1e4), won = n % 1e4;
+  const p = [];
+  if (eok) p.push(eok.toLocaleString() + '억');
+  if (man) p.push(man.toLocaleString() + '만');
+  if (won) p.push(won.toLocaleString());
+  return p.join(' ') + '원';
+}
+const mList = ms => ms.length === 12 ? '매달' : ms.length > 4 ? `${ms.length}개월` : ms.map(m => m + '월').join('·');
+
+function readParams() {
+  const divs = [];
+  for (let i = 0; i < NDIV; i++) divs.push({ name: $('dn' + i).value.trim(), invest: Math.max(0, num('dv' + i)), yield: clamp(num('dy' + i), 0, 30) / 100, pattern: $('dp' + i).value, acct: $('da' + i).value });
+  return { age: clamp(Math.round(num('age')) || 65, 40, 110), target: Math.max(0, num('target')), nps: Math.max(0, num('nps')),
+    pen: { amt: Math.max(0, num('pen-amt')), freq: $('pen-freq').value, taxFree: $('pen-free').checked }, divs };
+}
+
+let chart = null, last = null;
+const COL = { nps: '#4A5A4A', pen: '#C4A57B', div: '#D9542B' };
+function render() {
+  const p = readParams(), r = rcCalendar(p, TR);
+  last = { p, r };
+  $('age-hint').textContent = `연금소득세 ${(rcPensionRate(p.age, TR) * 100).toFixed(1)}% (받는 날 만 나이 기준)`;
+  const penCnt = RC_PATTERNS[p.pen.freq].months.length;
+  $('pen-hint').textContent = p.pen.amt ? `1년 ${fmtMan(p.pen.amt * penCnt)} (${penCnt}번)${r.penOver ? ` · ${fmtMan(TR.PENSION.separateLimit)} 넘음` : ''}` : '';
+
+  const flat = r.max - r.min;
+  $('verdict').innerHTML = `<div class="v-k">결론 · ${p.age}세 · 1년 ${fmtMan(r.sum)}</div>`
+    + `<div class="v-main">한 달 평균 <b>${fmtMan(r.avg)}</b>이 들어와요</div>`
+    + `<div class="v-sub">가장 적은 달(${mList(r.minMonths)}) ${fmtMan(r.min)} · 가장 많은 달(${mList(r.maxMonths)}) ${fmtMan(r.max)}`
+    + (p.target > 0 ? (r.shortMonths.length ? ` · 생활비 ${fmtMan(p.target)}보다 모자란 달 <b>${r.shortMonths.length}개월</b>(1년 ${fmtMan(r.shortSum)})` : ` · 모든 달이 생활비 ${fmtMan(p.target)} 이상`) : '') + `</div>`;
+  $('s-avg').textContent = fmtMan(r.avg);
+  $('s-avg-sub').textContent = p.target > 0 ? `생활비 ${fmtMan(p.target)}의 ${Math.round(r.avg / p.target * 100)}%` : '세금 뗀 금액';
+  $('s-min').textContent = fmtMan(r.min);
+  $('s-min-sub').textContent = mList(r.minMonths);
+  $('s-max').textContent = fmtMan(r.max);
+  $('s-max-sub').textContent = flat > 0 ? `${mList(r.maxMonths)} · 적은 달보다 ${fmtMan(flat)} 많음` : '매달 같아요';
+  $('s-tax').textContent = fmtWon(r.taxSum);
+  $('s-tax-sub').textContent = '연금소득세 + 배당 원천징수';
+
+  const al = [];
+  if (r.fill) al.push(['info', `돈이 들어오는 달이 들쭉날쭉해요. <b>${RC_PATTERNS[r.fill].label}</b>에 주는 분기 배당 종목을 더하거나, 연금계좌를 그 달에 꺼내면 달력이 고르게 돼요.`]);
+  if (p.target > 0 && r.shortMonths.length) al.push(['warn', `생활비보다 모자란 달이 <b>${r.shortMonths.length}개월</b>, 1년 합계 <b>${fmtMan(r.shortSum)}</b>이에요. 많이 들어오는 달에 남는 돈을 파킹통장·CMA에 모아 두면 메울 수 있어요.`]);
+  else if (p.target > 0) al.push(['ok', `모든 달이 생활비 ${fmtMan(p.target)} 이상이에요.`]);
+  if (r.penOver) al.push(['warn', `연금계좌에서 1년에 ${fmtMan(r.penGross)}을 꺼내요. <b>${fmtMan(TR.PENSION.separateLimit)}</b>을 넘으면 종합과세 또는 ${(TR.PENSION.separateRate * 100).toFixed(1)}% 분리과세를 골라야 해서, 이 달력의 세금보다 더 낼 수 있어요.`]);
+  if (r.finOver) al.push(['warn', `일반계좌 배당(세전)이 1년 ${fmtMan(r.divGross)}으로 <b>${fmtMan(TR.FIN_INCOME.threshold)}</b>을 넘어 금융소득 종합과세 대상이에요. 세금이 더 나올 수 있어요(<a href="https://ttokjaetv.github.io/fin-income-tax/" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800">계산해 보기 →</a>).`]);
+  else if (r.nhisOver) al.push(['info', `일반계좌 배당(세전)이 1년 ${fmtMan(r.divGross)}으로 ${fmtMan(TR.NHIS.finIncomeThreshold)}을 넘어 <b>건보료</b>에 반영돼요(지역가입자·피부양자 자격).`]);
+  $('alerts').innerHTML = al.map(([k, h]) => `<div class="alert ${k}"><span class="ic">${k === 'warn' ? '!' : k === 'ok' ? '✓' : 'i'}</span><div>${h}</div></div>`).join('');
+
+  $('cal').innerHTML = r.months.map(x => {
+    const cls = flat > 0 && x.total === r.min ? 'low' : flat > 0 && x.total === r.max ? 'high' : '';
+    const w = v => x.total > 0 ? (v / x.total * 100).toFixed(1) : 0;
+    const parts = [];
+    if (x.nps) parts.push(`국민연금 ${fmtMan(x.nps)}`);
+    if (x.pen) parts.push(`연금계좌 ${fmtMan(x.pen)}`);
+    x.items.forEach(it => { const d = p.divs[it.k]; parts.push(`${esc(d.name || '배당 ' + (it.k + 1))} ${fmtMan(it.net)}`); });
+    return `<div class="cal-m ${cls}"><div class="mn"><span>${x.m}월</span>${cls === 'low' ? '<em>적은 달</em>' : cls === 'high' ? '<em>많은 달</em>' : ''}</div>`
+      + `<div class="mt">${fmtMan(x.total)}</div>`
+      + `<div class="bar"><span style="width:${w(x.nps)}%;background:${COL.nps}"></span><span style="width:${w(x.pen)}%;background:${COL.pen}"></span><span style="width:${w(x.div)}%;background:${COL.div}"></span></div>`
+      + `<div class="mb">${parts.join('<br>') || '들어오는 돈 없음'}</div>`
+      + (x.short ? `<div class="short">생활비보다 ${fmtMan(x.short)} 부족</div>` : '') + `</div>`;
+  }).join('');
+
+  renderChart(p, r);
+  renderInsight(p, r);
+  saveLocal();
+}
+
+const FONT = { family: "'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" };
+function renderChart(p, r) {
+  if (typeof Chart === 'undefined') return;
+  if (chart) chart.destroy();
+  const ds = [
+    { label: '국민연금', data: r.months.map(x => x.nps / 1e4), backgroundColor: COL.nps, stack: 's' },
+    { label: '연금계좌 인출', data: r.months.map(x => x.pen / 1e4), backgroundColor: COL.pen, stack: 's' },
+    { label: '배당', data: r.months.map(x => x.div / 1e4), backgroundColor: COL.div, stack: 's' },
+  ];
+  if (p.target > 0) ds.push({ type: 'line', label: '생활비', data: r.months.map(() => p.target / 1e4), borderColor: '#2E5E8A', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false });
+  chart = new Chart($('cal-chart'), {
+    type: 'bar',
+    data: { labels: r.months.map(x => x.m + '월'), datasets: ds },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { font: { ...FONT, size: 12, weight: 700 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtMan(c.raw * 1e4)}` } } },
+      scales: { x: { stacked: true, ticks: { font: { ...FONT, size: 11 } }, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, ticks: { font: { ...FONT, size: 11 }, callback: v => Math.round(v).toLocaleString() + '만' }, grid: { color: '#EDE5D8' } } } },
+  });
+}
+
+function renderInsight(p, r) {
+  const li = [];
+  const flat = r.max - r.min;
+  $('ins-title').innerHTML = flat > 0 ? `가장 적은 달과 많은 달이 <em>${fmtMan(flat)}</em> 차이 나요` : '매달 같은 돈이 들어오는 달력이에요';
+  li.push('노후 월급은 <strong>평균보다 가장 적은 달</strong>이 중요해요. 생활비는 매달 나가니, 적은 달에 맞춰 계획하고 많은 달의 남는 돈은 모아 두세요.');
+  li.push(`월배당 ETF는 매달 고르게, 분기 배당은 석 달에 한 번 크게 들어와요. 분기 배당끼리 <strong>지급 달이 다른 종목을 섞으면</strong>(1·4·7·10 / 2·5·8·11 / 3·6·9·12월) 매달 받는 것처럼 만들 수 있어요.`);
+  li.push(`연금계좌는 꺼내는 주기를 정할 수 있어요. 배당이 적은 달에 맞춰 꺼내고, 1년 합계는 ${fmtMan(TR.PENSION.separateLimit)} 이하로 맞추면 연금소득세가 가장 낮아요.`);
+  $('ins-desc').innerHTML = `<ul>${li.map(x => `<li>${x}</li>`).join('')}</ul>`;
+}
+
+/* ---- 저장·공유 ---- */
+function collect() { const o = { pf: $('pen-free').checked ? 1 : 0 }; FIELDS.forEach(id => { o[id] = $(id).value; }); return o; }
+function apply(o) {
+  if (o.pf != null) $('pen-free').checked = String(o.pf) === '1';
+  FIELDS.forEach(id => {
+    if (o[id] == null) return;
+    const el = $(id);
+    if (el.tagName === 'SELECT') { if ([...el.options].some(op => op.value === o[id])) el.value = o[id]; }
+    else if (el.classList.contains('name')) el.value = String(o[id]).slice(0, 30);
+    else el.value = String(o[id]).replace(/[^0-9.,]/g, '').slice(0, 15);
+  });
+  document.querySelectorAll('input[data-man]').forEach(formatMan);
+}
+function saveLocal() { try { localStorage.setItem(STORE_KEY, JSON.stringify(collect())); } catch (e) {} }
+function formatMan(el) {
+  const raw = el.value.replace(/[^0-9]/g, ''); if (raw === '') return;
+  const pos = el.value.length - (el.selectionStart ?? el.value.length);
+  el.value = Number(raw).toLocaleString();
+  try { if (document.activeElement === el) { const np = Math.max(0, el.value.length - pos); el.setSelectionRange(np, np); } } catch (e) {}
+}
+let timer = null;
+function schedule() { clearTimeout(timer); timer = setTimeout(render, 120); }
+document.querySelectorAll('input,select').forEach(el => {
+  el.addEventListener('input', () => { if (el.hasAttribute('data-man')) formatMan(el); schedule(); });
+  el.addEventListener('change', schedule);
+});
+$('share-btn').addEventListener('click', () => {
+  const url = location.origin + location.pathname + '?' + new URLSearchParams(collect()).toString();
+  const done = () => { const b = $('share-btn'); b.textContent = '복사했어요 ✓'; setTimeout(() => { b.textContent = '설정 링크 복사'; }, 1600); };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => prompt('아래 주소를 복사하세요', url)); else prompt('아래 주소를 복사하세요', url);
+});
+$('reset-btn').addEventListener('click', () => { FIELDS.forEach(id => { $(id).value = DEFAULTS[id]; }); $('pen-free').checked = false; render(); });
+$('copy-btn').addEventListener('click', () => {
+  if (!last) return;
+  const { p, r } = last;
+  const lines = [
+    `[노후 월급 달력 · ${new Date().toISOString().slice(0, 10)}]`,
+    `· 국민연금 월 ${fmtMan(p.nps)} · 연금계좌 ${fmtMan(p.pen.amt)}(${RC_PATTERNS[p.pen.freq].label})`,
+    ...p.divs.filter(d => d.invest > 0 && d.yield > 0).map(d => `· ${d.name || '배당'} ${fmtMan(d.invest)} × ${(d.yield * 100).toFixed(2)}% (${RC_PATTERNS[d.pattern].label})`),
+    `· 한 달 평균 ${fmtMan(r.avg)} · 가장 적은 달 ${fmtMan(r.min)}(${mList(r.minMonths)}) · 많은 달 ${fmtMan(r.max)}`,
+    ...r.months.map(x => `  ${x.m}월 ${fmtMan(x.total)}`),
+    'https://ttokjaetv.github.io/retire-calendar/',
+  ].join('\n');
+  const b = $('copy-btn'); const ok = () => { b.textContent = '복사했어요 ✓'; setTimeout(() => { b.textContent = '결과 글로 복사'; }, 1600); };
+  if (navigator.clipboard) navigator.clipboard.writeText(lines).then(ok, () => prompt('복사하세요', lines)); else prompt('복사하세요', lines);
+});
+
+(function init() {
+  let o = null;
+  const q = new URLSearchParams(location.search);
+  if ([...q.keys()].length) { o = {}; q.forEach((v, k) => { o[k] = v; }); }
+  else { try { o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { o = null; } }
+  if (o) apply(o);
+  render();
+})();
+</script>
+</body>
+</html>
