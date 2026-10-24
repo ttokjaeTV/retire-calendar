@@ -59,5 +59,9 @@ r = rcCalendar({ age: 65, nps: 100 * M, divs: [] }, R);
 eq('고른 달력 → 채울 달 없음', r.fill, null);
 eq('평균 = 매달', r.avg, 100 * M);
 
+// 주택연금은 매달 그대로 더함(세금 없음)
+r = rcCalendar({ ...base, house: 90 * M }, R);
+eq('주택연금 90만 더하면 1월 = 2,427,000 + 900,000', r.months[0].total, 2427000 + 900000);
+
 console.log(fail ? `실패 ${fail}/${n}` : `ALL PASS (${n}개)`);
 process.exit(fail ? 1 : 0);

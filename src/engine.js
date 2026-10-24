@@ -1,6 +1,6 @@
 /* 노후 월급 달력 엔진 — 국민연금 + 연금계좌 인출 + 일반계좌 배당을 1~12월로 나눠 '매달 통장에 들어오는 돈'을 계산한다. 금액 원.
  * 제도 숫자는 rules.js(R.PENSION·R.FIN_INCOME·R.NHIS, v2026.3)에서 읽는다.
- *   국민연금: 사용자가 넣은 월 수령액(실수령) 그대로, 매달
+ *   국민연금: 사용자가 넣은 월 수령액(실수령) 그대로, 매달 / 주택연금: 넣은 월지급금 그대로, 매달(대출이라 세금 없음)
  *   연금계좌 인출: 받는 날 만 나이로 연금소득세(소득세법 제129조①5호의2, 지방세 포함) — 세액공제 받은 원금·운용수익 기준.
  *     세액공제 받지 않은 원금만 꺼내면 세금이 없음(옵션). 연 합계가 R.PENSION.separateLimit 넘으면 경고만.
  *   배당: 일반계좌만(ISA·연금계좌 배당은 계좌 안에 쌓임). 국내상장 15.4%, 미국 직투 15%(현지 원천징수) 떼고 지급월에 나눠 넣음.
@@ -20,11 +20,12 @@ function rcPensionRate(age, R) {
   return 0;
 }
 
-/* p = { age, nps, pen: { amt, freq: 'm'|'q36'|…, taxFree }, divs: [{ name, invest, yield, pattern, acct: 'kr'|'us' }], target } */
+/* p = { age, nps, house, pen: { amt, freq: 'm'|'q36'|…, taxFree }, divs: [{ name, invest, yield, pattern, acct: 'kr'|'us' }], target } */
 function rcCalendar(p, R) {
-  const M = Array.from({ length: 12 }, (_, i) => ({ m: i + 1, nps: 0, pen: 0, penTax: 0, div: 0, divTax: 0, items: [] }));
+  const M = Array.from({ length: 12 }, (_, i) => ({ m: i + 1, nps: 0, house: 0, pen: 0, penTax: 0, div: 0, divTax: 0, items: [] }));
   // 국민연금
   if (p.nps > 0) M.forEach(x => { x.nps = p.nps; });
+  if (p.house > 0) M.forEach(x => { x.house = p.house; });
   // 연금계좌 인출
   const pen = p.pen || {}, penMonths = (RC_PATTERNS[pen.freq] || RC_PATTERNS.m).months;
   const penRate = pen.taxFree ? 0 : rcPensionRate(p.age, R);
@@ -43,7 +44,7 @@ function rcCalendar(p, R) {
     const tax = Math.floor(gross * rate);
     pat.months.forEach(m => { M[m - 1].div += gross - tax; M[m - 1].divTax += tax; M[m - 1].items.push({ k, net: gross - tax }); divGross += gross; });
   });
-  M.forEach(x => { x.total = x.nps + x.pen + x.div; x.short = p.target > 0 ? Math.max(0, p.target - x.total) : 0; });
+  M.forEach(x => { x.total = x.nps + x.house + x.pen + x.div; x.short = p.target > 0 ? Math.max(0, p.target - x.total) : 0; });
   const totals = M.map(x => x.total), sum = totals.reduce((s, v) => s + v, 0);
   const min = Math.min(...totals), max = Math.max(...totals);
   // 가장 적은 달을 채우는 분기 배당 달: 세 분기 패턴 중 지금 합이 가장 작은 쪽
